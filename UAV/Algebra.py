@@ -273,13 +273,51 @@ def MDS(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2,noise=0):
         # Let's find the optimal threshold
 
         l = 1/2*g(-2*np.arctan2((S_prime-S)[0,0],(S_prime-S)[1,0]) + 2*np.arctan2((S_prime2-S)[0,0],(S_prime2-S)[1,0]))
+        l = 1/2*g(-2*np.arctan2((S_prime-S)[1,0],(S_prime-S)[0,0]) + 2*np.arctan2((S_prime2-S)[1,0],(S_prime2-S)[0,0]))
         print(l)
-        if np.abs(theta_r2) > np.abs(l):
+        if np.abs(theta_r2) < np.abs(l):
             F = np.array([[-1,0],[0,1]])
             theta_r = LSE(DM,DM_prime,F@S_star,S_prime-S)
             S_star2 = rotateMatrix(theta_r)@F@S_star
     return S_star,S_s,S_star2
 
+
+def MDS_test(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2):
+
+
+    DM        = expected_value(DM,'Gaussian')
+    # Eigenvalue decomposition for a first estimation of the coordinates: S*
+    S_star = EVD(DM,DIM)
+    # Remove translational ambiguities
+    S_star, offset = remove_offset(S,S_star)
+
+
+    DM_prime  = expected_value(DM_prime,'Gaussian')
+    # Estimation of the rotation angle: theta_r
+    theta_r = LSE(DM,DM_prime,S_star,S_prime-S)
+    # New rotated coordinates: S**
+    S_star2 = rotateMatrix(theta_r)@S_star
+
+    DM_prime2 = expected_value(DM_prime2,'Gaussian')
+    # Estimation of the rotation angle: theta_r
+    theta_r2 = LSE(DM,DM_prime2,S_star2,S_prime2-S)
+
+    l = 1/2*g(-2*np.arctan2((S_prime-S)[0,0],(S_prime-S)[1,0]) + 2*np.arctan2((S_prime2-S)[0,0],(S_prime2-S)[1,0]))
+    #l = 1/2*g(-2*np.arctan2((S_prime-S)[1,0],(S_prime-S)[0,0]) + 2*np.arctan2((S_prime2-S)[1,0],(S_prime2-S)[0,0]))
+
+    if np.abs(theta_r2) > np.abs(l):
+        F = np.array([[-1,0],[0,1]])
+        theta_r = LSE(DM,DM_prime,F@S_star,S_prime-S)
+        S_star2 = rotateMatrix(theta_r)@F@S_star
+
+    if np.abs(theta_r2) < np.abs(l):
+        theta_r3 = get_theta(DM,DM_prime,S_star2,S_star-S)
+        S_star3 = rotateMatrix(theta_r3)@S_star2
+    else:
+        print("no")
+        return S_star,S_star2,S_star2
+
+    return S_star,S_star2, S_star3
 
 def obj(theta,DM,DM_prime,S_star,displ):
     deltaX = displ[0,0]

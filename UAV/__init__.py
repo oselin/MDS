@@ -9,6 +9,7 @@ from UAV.Algebra import rotateMatrix
 from UAV.Algebra import get_theta
 from UAV.Algebra import EVD
 from UAV.Algebra import MDS
+from UAV.Algebra import MDS_test
 from UAV.Algebra import noise_matrix
 from UAV.Algebra import square
 from UAV.Algebra import expected_value
