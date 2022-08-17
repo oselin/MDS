@@ -3,8 +3,13 @@ import numpy as np
 from  scipy.optimize import minimize_scalar
 
 
-def EVD(DM,final_dimension):
 
+def EVD(DM,final_dimension):
+    '''
+    Eigenvalue decomposition function
+    INPUT: squared distance matrix, final dimension for the index reduction
+    RETURN: reduced matrix
+    '''
     n = len(DM) #since it is a square matrix, no need to specify len for columns or rows
 
     # Centering Matrix definition
@@ -32,7 +37,12 @@ def EVD(DM,final_dimension):
 
 
 def remove_offset(S,S_star, verbose = 0):
-
+    '''
+    Function to reduce the offset between the reduced matrix and the anchor's original position
+    set verbose=1 to print more data
+    INPUT: S (original coordinates vector), S* (new estimated coordinates vector)
+    RETURN: S* without offset, vector of offset
+    '''
     # Find the offset between the 2 anchors
     displX = S[0,0] - S_star[0,0]
     displY = S[1,0] - S_star[1,0]
@@ -66,6 +76,11 @@ def move(DIM,N,all=0):
 
 
 def DM_from_platoon(platoon):
+    '''
+    Build a distance matrix from a platoon of robots. Robot objects are required
+    INPUT: list of Robot objects
+    RETURN: distance matrix
+    '''
     d_mat = np.zeros((len(platoon),len(platoon)))
 
     for i in range(len(platoon)):
@@ -76,6 +91,11 @@ def DM_from_platoon(platoon):
     
 
 def DM_from_platoon2(platoon):
+    '''
+    Build a squared distance matrix from a platoon of robots. Robot objects are required
+    INPUT: list of Robot objects
+    RETURN: squared distance matrix
+    '''
     d_mat = np.zeros((len(platoon),len(platoon)))
 
     for i in range(len(platoon)):
@@ -85,8 +105,22 @@ def DM_from_platoon2(platoon):
     return d_mat
 
 
-def DM_from_S2(S,verbose=0):
+def DM_from_S(S):
+    '''
+    Build a distance matrix from a vector of coordinates. 
+    INPUT: S coordinates vector
+    RETURN: distance matrix
+    '''
+    m = DM_from_S2(S)
+    return np.power(m,1/2)
 
+
+def DM_from_S2(S,verbose=0):
+    '''
+    Build a squared distance matrix from a vector of coordinates. 
+    INPUT: S coordinates vector
+    RETURN: squared distance matrix
+    '''
     e   = np.ones((1,len(S[0,:]))).T
     
     Phi_prime = np.array([np.diag(S.T@S)]).T    
@@ -101,12 +135,12 @@ def DM_from_S2(S,verbose=0):
     return DM_prime
 
 
-def DM_from_S(S):
-    m = DM_from_S2(S)
-    return np.power(m,1/2)
-
-
 def noise_matrix(DIM, mu, sigma):
+    '''
+    Build a Gaussian noise matrix.
+    INPUT: Dimension of the square matrix, mean mu, variance sigma
+    RETURN: nooise matrix
+    '''
     m = np.zeros((DIM,DIM))
 
     for i in range(DIM):
@@ -117,10 +151,20 @@ def noise_matrix(DIM, mu, sigma):
 
 
 def square(matrix):
+    '''
+    Elevate each element of a matrix to the power of two
+    INPUT: matrix
+    RETURN: square matrix
+    '''
     return np.power(matrix,2)
     
 
 def expected_value(matrix,noise='Gaussian'):
+    '''
+    Create a symmetric square matrix using the expected value operator
+    INPUT: asymmetric square matrix
+    RETURN: symmetrix matrix
+    '''
     if (noise == 'Gaussian'):
         for i in range(len(matrix[:,0])):
             for j in range(len(matrix[0,:])):
@@ -134,7 +178,7 @@ def rotateMatrix(theta):
     return np.array([[np.cos(theta),np.sin(theta)],[-np.sin(theta),np.cos(theta)]])
 
 
-#def translateMatrix(transl):
+
 def get_theta(DM,DM_prime,S_star,displ,index=1,approx = 0,verbose=0):
 
     deltaX = displ[0,0]

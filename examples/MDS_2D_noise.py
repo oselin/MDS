@@ -1,5 +1,5 @@
 import sys
-sys.path.append('./dev_ws/src')
+sys.path.append('')
 
 import numpy as np
 from UAV import *
