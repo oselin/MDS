@@ -178,7 +178,6 @@ def rotateMatrix(theta):
     return np.array([[np.cos(theta),np.sin(theta)],[-np.sin(theta),np.cos(theta)]])
 
 
-
 def get_theta(DM,DM_prime,S_star,displ,index=1,approx = 0,verbose=0):
 
     deltaX = displ[0,0]
@@ -307,17 +306,19 @@ def MDS_test(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2):
 
     if np.abs(theta_r2) > np.abs(l):
         F = np.array([[-1,0],[0,1]])
-        theta_r = LSE(DM,DM_prime,F@S_star,S_prime-S)
-        S_star2 = rotateMatrix(theta_r)@F@S_star
+        theta_r3 = LSE(DM,DM_prime,F@S_star,S_prime-S)
+        S_star2 = rotateMatrix(theta_r3)@F@S_star
 
     if np.abs(theta_r2) < np.abs(l):
-        theta_r3 = get_theta(DM,DM_prime,S_star2,S_star-S)
-        S_star3 = rotateMatrix(theta_r3)@S_star2
+        #theta_r3 = get_theta(DM,DM_prime,S_star2,S_star-S)
+        #S_star3 = rotateMatrix(theta_r3)@S_star2
+        pass
     else:
         print("no")
-        return S_star,S_star2,S_star2
+        S_star2 = rotateMatrix(theta_r)@S_star2
 
-    return S_star,S_star2, S_star3
+
+    return S_star,S_star2
 
 def obj(theta,DM,DM_prime,S_star,displ):
     deltaX = displ[0,0]
