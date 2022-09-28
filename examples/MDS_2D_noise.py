@@ -32,8 +32,10 @@ for rob in platoon:
 # TO DEMONSTRATE IT
 
 S = coordinates[0:2,:]
-S_anc = np.copy(S)
-S_anc[:,1:] = np.zeros((2,len(S[0,:])-1))
+#S_anc = np.copy(S)
+#S_anc[:,1:] = np.zeros((2,len(S[0,:])-1))
+
+print(S)
 
 plt.ion()
 ii = 1
