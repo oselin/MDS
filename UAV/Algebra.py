@@ -13,7 +13,7 @@ def EVD(DM,final_dimension):
     n = len(DM) #since it is a square matrix, no need to specify len for columns or rows
 
     # Centering Matrix definition
-    H = np.identity(n) - np.ones((n,n))/n
+    H = np.eye(n) - np.ones((n,n))/n
 
     # Double centered matrix
     B = -1/2*H@DM@H
@@ -23,15 +23,18 @@ def EVD(DM,final_dimension):
 
     LAMBDA = np.eye(final_dimension)
     U = np.zeros((n,final_dimension))
-
+    print(ev)
+    print(EV)
     for i in range(final_dimension):
         # Search for the heighest eigenvalue. Put it into lambda and its associated vector in U.
         # Eventually set the eigenvalue to -1000 to find the other heighest eigenvalues
         ind  = np.argmax(ev)
         LAMBDA[i,i] = ev[ind].real
-        U[:,[i]]  = EV[:,[ind]].real
+        U[:,i]  = EV[:,ind].real
         ev[ind] = -1000
     
+    print(LAMBDA)
+
     S_star = np.sqrt(LAMBDA)@U.T
     return S_star
 
@@ -65,14 +68,14 @@ def remove_offset(S,S_star, verbose = 0):
     
 
 def move(DIM,N,all=0):
-    DeltaS_prime = np.zeros((DIM,N))
+    DELTA = np.zeros((DIM,N))
 
     if all:
-        DeltaS_prime[:,1:] = [[np.random.normal() for _ in range(N-1)] for _ in range(DIM)]
+        DELTA[:,1:] = [[np.random.normal() for _ in range(N-1)] for _ in range(DIM)]
     else:
-        DeltaS_prime[:,0] = [np.random.rand(),np.random.rand()]
+        DELTA[:,0] = [np.random.rand(),np.random.rand()]
 
-    return DeltaS_prime
+    return DELTA
 
 
 def DM_from_platoon(platoon):
@@ -81,13 +84,13 @@ def DM_from_platoon(platoon):
     INPUT: list of Robot objects
     RETURN: distance matrix
     '''
-    d_mat = np.zeros((len(platoon),len(platoon)))
+    distance_matrix = np.zeros((len(platoon),len(platoon)))
 
     for i in range(len(platoon)):
         for j in range(len(platoon)):
-            d_mat[i,j] = platoon[i].get_distance(platoon[j])
+            distance_matrix[i,j] = platoon[i].get_distance(platoon[j])
 
-    return d_mat
+    return distance_matrix
     
 
 def DM_from_platoon2(platoon):
@@ -96,13 +99,13 @@ def DM_from_platoon2(platoon):
     INPUT: list of Robot objects
     RETURN: squared distance matrix
     '''
-    d_mat = np.zeros((len(platoon),len(platoon)))
+    distance_matrix = np.zeros((len(platoon),len(platoon)))
 
     for i in range(len(platoon)):
         for j in range(len(platoon)):
-            d_mat[i,j] = platoon[i].get_distance(platoon[j])**2
+            distance_matrix[i,j] = platoon[i].get_distance(platoon[j])**2
 
-    return d_mat
+    return distance_matrix
 
 
 def DM_from_S(S):
@@ -145,8 +148,8 @@ def noise_matrix(DIM, mu, sigma):
 
     for i in range(DIM):
         for j in range(DIM):
-            if (i!=j):
-                m[i,j] = np.random.normal(mu,sigma)
+            if (i!=j): m[i,j] = np.random.normal(mu,sigma)
+
     return m
 
 
@@ -165,6 +168,7 @@ def expected_value(matrix,noise='Gaussian'):
     INPUT: asymmetric square matrix
     RETURN: symmetrix matrix
     '''
+
     if (noise == 'Gaussian'):
         for i in range(len(matrix[:,0])):
             for j in range(len(matrix[0,:])):
@@ -229,16 +233,11 @@ def get_theta(DM,DM_prime,S_star,displ,index=1,approx = 0,verbose=0):
 
 def MDS(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2,noise=0):
 
-    if (noise):
-        DM        = expected_value(DM,noise)
-        DM_prime  = expected_value(DM_prime,noise)
+    if noise:
+        DM        = expected_value(DM      , noise)
+        DM_prime  = expected_value(DM_prime, noise)
         DM_prime2 = expected_value(DM_prime2,noise)
-#        print(DM)
-#        print()
-#        print(DM_prime)
-#        print()
-#        print(DM_prime2)
-#        print()
+
  
     # Eigenvalue decomposition for a first estimation of the coordinates: S*
     S_star = EVD(DM,DIM)
@@ -320,7 +319,8 @@ def MDS_test(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2):
 
     return S_star,S_star2
 
-def obj(theta,DM,DM_prime,S_star,displ):
+
+def objective_function(theta,DM,DM_prime,S_star,displ):
     deltaX = displ[0,0]
     deltaY = displ[1,0]
 
@@ -338,8 +338,10 @@ def obj(theta,DM,DM_prime,S_star,displ):
 
 def LSE(DM,DM_prime,S_star,displ):
 
-    r = minimize_scalar(obj,args=(DM,DM_prime,S_star,displ))
- 
+    r = minimize_scalar(objective_function,args=(DM,DM_prime,S_star,displ))
+    
+    print(r)
+    exit(1)
     return r.x
 
 

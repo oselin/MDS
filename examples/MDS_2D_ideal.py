@@ -7,24 +7,23 @@ import matplotlib.pyplot as plt
 
 #GLOBAL PARAMETERS
 N_ROBOTS  = 5
-DIMENSION = 2
+DIMENSION = 2 #2D
 
 
+# Fleet of drones
 platoon = []
 
 
-# INITIALIZATION OF THE ROBOTS
+# INITIALIZATION OF THE DRONES
 for i in range(N_ROBOTS):
-    if i==0:
-        i_robot = Robot("op_" + str(i),0,0,0)
-    else:
-        i_robot = Robot("op_" + str(i),np.random.uniform(0, 10.0),np.random.uniform(0, 10.0),0)
+    if i==0: i_robot = Robot(f"op_{i}",0,0,0) #Anchor in the origin
+    else:    i_robot = Robot(f"op_{i}",np.random.uniform(0, 10.0),np.random.uniform(0, 10.0),0)
     platoon.append(i_robot)
 
 coordinates = [[],[],[]]
 
-for rob in platoon:
-    coordinates = np.append(coordinates,rob.get_coords(),axis=1)
+for drone in platoon:
+    coordinates = np.append(coordinates, drone.get_coords(),axis=1)
 
 # Vector of true coordinates S
 # NOTE: IT WILL BE USED FOR PLOTTING THE ACTUAL COORDINATES
@@ -55,7 +54,7 @@ while True:
     # Simulate a NEW communication among UAVs and get distances
     DM_prime2 = DM_from_S2(S_prime2)
 
-    SS,S_estim = MDS(S_anc,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIMENSION)
+    SS, _, S_estim = MDS(S_anc,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIMENSION)
     
     plot_points(ii,plt,S=S, SS= SS,S_estim = S_estim)
 
