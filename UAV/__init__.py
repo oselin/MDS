@@ -15,3 +15,4 @@ from UAV.Algebra import square
 from UAV.Algebra import expected_value
 
 from UAV.Plots   import plot_points
+#from UAV.nonMetricMDS import 

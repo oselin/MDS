@@ -23,8 +23,7 @@ def EVD(DM,final_dimension):
 
     LAMBDA = np.eye(final_dimension)
     U = np.zeros((n,final_dimension))
-    print(ev)
-    print(EV)
+
     for i in range(final_dimension):
         # Search for the heighest eigenvalue. Put it into lambda and its associated vector in U.
         # Eventually set the eigenvalue to -1000 to find the other heighest eigenvalues
@@ -32,10 +31,9 @@ def EVD(DM,final_dimension):
         LAMBDA[i,i] = ev[ind].real
         U[:,i]  = EV[:,ind].real
         ev[ind] = -1000
-    
-    print(LAMBDA)
 
     S_star = np.sqrt(LAMBDA)@U.T
+
     return S_star
 
 
@@ -280,7 +278,7 @@ def MDS(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2,noise=0):
     return S_star,S_s,S_star2
 
 
-def MDS_test(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2):
+def MDS_test(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2, noise='Gaussian'):
 
 
     DM        = expected_value(DM,'Gaussian')
@@ -293,6 +291,9 @@ def MDS_test(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2):
     DM_prime  = expected_value(DM_prime,'Gaussian')
     # Estimation of the rotation angle: theta_r
     theta_r = LSE(DM,DM_prime,S_star,S_prime-S)
+    print(theta_r>=-np.pi and theta_r < np.pi)
+    print(theta_r)
+    exit(1)
     # New rotated coordinates: S**
     S_star2 = rotateMatrix(theta_r)@S_star
 
@@ -317,7 +318,7 @@ def MDS_test(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2):
         S_star2 = rotateMatrix(theta_r)@S_star2
 
 
-    return S_star,S_star2
+    return S_star, 0, S_star2
 
 
 def objective_function(theta,DM,DM_prime,S_star,displ):
@@ -325,7 +326,11 @@ def objective_function(theta,DM,DM_prime,S_star,displ):
     deltaY = displ[1,0]
 
     obj = 0
-
+    alpha_n = 0
+    gamma_n = 0
+    beta_n  = 0
+    delta_n = 0
+    
     for index in range(len(DM)):
         a = DM[0,index] - DM_prime[0,index] + deltaX**2 + deltaY**2
         b = -2*(S_star[0,index]*deltaX + S_star[1,index]*deltaY)    
@@ -335,13 +340,64 @@ def objective_function(theta,DM,DM_prime,S_star,displ):
 
     return obj
 
+def analytical_sol(DM,DM_prime, S_star, displ):
+    deltaX = displ[0,0]
+    deltaY = displ[1,0]
+
+    alpha_n = 0
+    gamma_n = 0
+    beta_n  = 0
+    delta_n = 0
+    
+    for index in range(len(DM)):
+        a = DM[0,index] - DM_prime[0,index] + deltaX**2 + deltaY**2
+        b = -2*(S_star[0,index]*deltaX + S_star[1,index]*deltaY)    
+        c =  2*(S_star[0,index]*deltaY - S_star[1,index]*deltaX)
+
+        alpha_n += a*b
+        beta_n  += a*c
+        gamma_n += b*c
+        delta_n += c**2-b**2
+    
+    p = [0, 0, 0, 0, 0]
+    p[0] = 4*gamma_n**2 + delta_n**2
+    p[1] = 2*(2*alpha_n*gamma_n + beta_n*delta_n)
+    p[2] = alpha_n**2 + beta_n**2 - 4*gamma_n**2 - delta_n**2
+    p[3] = 2*(-alpha_n*gamma_n - beta_n*delta_n)
+    p[4] = - beta_n**2 + gamma_n**2
+
+    # Get the roots
+    sol = np.roots(p)
+
+    # Get the real roots
+    sol = sol[np.isreal(sol)]
+
+    # Get feasible candidates
+    sol = sol[sol>=-1]
+    sol = sol[sol<=1]
+
+    return sol
 
 def LSE(DM,DM_prime,S_star,displ):
 
     r = minimize_scalar(objective_function,args=(DM,DM_prime,S_star,displ))
+
+    sol = analytical_sol(DM,DM_prime,S_star,displ)
     
-    print(r)
-    exit(1)
+    candidates = []
+    
+    for can in sol:
+        candidates.append(np.arcsin(can))
+        candidates.append(g(np.pi - np.arcsin(can)))
+    
+    candidates = np.array(candidates)
+
+    candidates = candidates[candidates >= -np.pi]
+    candidates = candidates[candidates <   np.pi]
+    print(candidates)
+
+    print("Check", np.min(np.abs(candidates - r.x)))
+    
     return r.x
 
 
