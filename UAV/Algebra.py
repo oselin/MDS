@@ -34,10 +34,13 @@ def EVD(DM,final_dimension):
 
     S_star = np.sqrt(LAMBDA)@U.T
 
+    if final_dimension == 2:
+        S_star = np.append(S_star, np.zeros([1,S_star.shape[1]]),axis=0)
+
     return S_star
 
 
-def remove_offset(S,S_star, verbose = 0):
+def remove_offset(S, S_star):
     '''
     Function to reduce the offset between the reduced matrix and the anchor's original position
     set verbose=1 to print more data
@@ -45,33 +48,27 @@ def remove_offset(S,S_star, verbose = 0):
     RETURN: S* without offset, vector of offset
     '''
     # Find the offset between the 2 anchors
-    displX = S[0,0] - S_star[0,0]
-    displY = S[1,0] - S_star[1,0]
+    displX = S[0] - S_star[0,0]
+    displY = S[1] - S_star[1,0]
+    displZ = S[2] - S_star[2,0]
+
 
     # Generate a displacement matrix
-    displacement_matrix = np.array([[displX for _ in range(len(S[0,:]))],
-                                    [displY for _ in range(len(S[0,:]))]])
-
-    if (verbose == 1):
-        print("X displacement: ", displX)
-        print("Y displacement: ", displY)
-        print("\nDisplacement matrix:\n",displacement_matrix)
-
-        print('Sx : ',S[0,0])
-        print('S*x: ',S_star[0,0])
-        print('Sy :',S[1,0])
-        print('S*y: ',S_star[1,0])
-        print(S_star + displacement_matrix - S)
+    displacement_matrix = np.array([[displX for _ in range(len(S_star[0,:]))],
+                                    [displY for _ in range(len(S_star[0,:]))],
+                                    [displZ for _ in range(len(S_star[0,:]))]])
+    
+    
     return S_star + displacement_matrix, displacement_matrix
     
 
-def move(DIM,N,all=0):
-    DELTA = np.zeros((DIM,N))
+def move(DIM, N, movement='anchor'):
+    DELTA = np.zeros((3,N))
 
-    if all:
-        DELTA[:,1:] = [[np.random.normal() for _ in range(N-1)] for _ in range(DIM)]
-    else:
-        DELTA[:,0] = [np.random.rand(),np.random.rand()]
+    if movement == 'all':
+        DELTA[:DIM,1:] = [[np.random.normal() for _ in range(N-1)] for _ in range(DIM)]
+    elif movement == 'anchor':
+        DELTA[:DIM,0]  = [np.random.rand() for _ in range(DIM)]
 
     return DELTA
 
@@ -116,7 +113,7 @@ def DM_from_S(S):
     return np.power(m,1/2)
 
 
-def DM_from_S2(S,verbose=0):
+def DM_from_S2(S):
     '''
     Build a squared distance matrix from a vector of coordinates. 
     INPUT: S coordinates vector
@@ -126,27 +123,27 @@ def DM_from_S2(S,verbose=0):
     
     Phi_prime = np.array([np.diag(S.T@S)]).T    
     DM_prime = Phi_prime@e.T - 2*S.T@S + e@Phi_prime.T
-
-    if verbose > 1:
-        print("Phi':\n",Phi_prime)
-    
-    if verbose > 0:
-        print("DM' :\n",DM_prime)
     
     return DM_prime
 
 
-def noise_matrix(DIM, mu, sigma):
+def noise_matrix(type, dim, features=0):
     '''
     Build a Gaussian noise matrix.
     INPUT: Dimension of the square matrix, mean mu, variance sigma
     RETURN: nooise matrix
     '''
-    m = np.zeros((DIM,DIM))
+    m = np.zeros((dim,dim))
 
-    for i in range(DIM):
-        for j in range(DIM):
-            if (i!=j): m[i,j] = np.random.normal(mu,sigma)
+    if (type == 'none' or type == 0): return m
+    elif (type=='gaussian'):
+        if features:
+            mu, sigma = features[0], features[1]
+        else: mu, sigma = 0, 0.01
+
+        for i in range(dim):
+            for j in range(dim):
+                if (i!=j): m[i,j] = np.random.normal(mu,sigma)
 
     return m
 
@@ -160,14 +157,14 @@ def square(matrix):
     return np.power(matrix,2)
     
 
-def expected_value(matrix,noise='Gaussian'):
+def expected_value(matrix,noise='gaussian'):
     '''
     Create a symmetric square matrix using the expected value operator
     INPUT: asymmetric square matrix
     RETURN: symmetrix matrix
     '''
 
-    if (noise == 'Gaussian'):
+    if (noise == 'gaussian'):
         for i in range(len(matrix[:,0])):
             for j in range(len(matrix[0,:])):
                 matrix[i,j] = matrix[j,i] = 1/2*(matrix[i,j] + matrix[j,i])
@@ -176,15 +173,26 @@ def expected_value(matrix,noise='Gaussian'):
         raise Exception("Different noise will be further implemented. Please assume Gaussian for now") 
     
 
-def rotateMatrix(theta):
-    return np.array([[np.cos(theta),np.sin(theta)],[-np.sin(theta),np.cos(theta)]])
+def rotation_matrix(theta):
+    '''
+    Rotational matrix in non-homogenous coordinates
+    INPUT: angle in radians
+    RETURN: 2D rotational matrix
+    '''
+    return np.array([[np.cos(theta),np.sin(theta),0],[-np.sin(theta),np.cos(theta),0], [0,0,1]])
 
 
-def get_theta(DM,DM_prime,S_star,displ,index=1,approx = 0,verbose=0):
-
+def get_theta(DM,DM_prime,S_star,displ,index=1,approx = 0):
+    '''
+    Function to get the solution to the system. The solution is unique for the no-noise case.
+    The solution can be uniquely identified if n UAVs > 3.
+    INPUT: Distance matrices, S* and displacement. approx parameter to get an approximated value
+    RETURN: theta as unique solution of the system.
+    '''
     deltaX = displ[0,0]
     deltaY = displ[1,0]
 
+    # Definition of the system
     a2 = DM[0,index] - DM_prime[0,index] + deltaX**2 + deltaY**2
     b2 = -2*(S_star[0,index]*deltaX + S_star[1,index]*deltaY)         
     c2 =  2*(S_star[0,index]*deltaY - S_star[1,index]*deltaX)     
@@ -193,43 +201,31 @@ def get_theta(DM,DM_prime,S_star,displ,index=1,approx = 0,verbose=0):
     b3 = -2*(S_star[0,index+1]*deltaX + S_star[1,index+1]*deltaY)     
     c3 =  2*(S_star[0,index+1]*deltaY - S_star[1,index+1]*deltaX)     
 
+    # Solution
     sinTheta = (a3*b2-a2*b3)/(b3*c2-b2*c3)
     cosTheta = (a2*c3-a3*c2)/(b3*c2-b2*c3)
 
-    if verbose > 0:
-        print("Coordinates to work with: %i-th and %i-th" % (index, index+1))
-
-    if verbose > 1:
-        print("Before normalization: ")
-        print("cos(theta):\t%f" % (cosTheta))
-        print("sin(theta):\t%f" % (sinTheta))
-        print("After normalization: ")
-
-    #NORMALIZATION
+    # Normalization of the solution
     mod = np.sqrt(sinTheta**2+cosTheta**2)
     sinTheta /= mod
     cosTheta /= mod
 
     theta = np.arctan2(sinTheta,cosTheta)
-    if approx == 1:
-        atheta = round(theta,4)
-    elif approx == 2:
-        atheta = round(theta,3)
-    if verbose > 0:
-        print("cos(theta):\t%f" % (cosTheta))
-        print("sin(theta):\t%f" % (sinTheta))
-        print("\nActual theta:\t",theta)
-        
-        if approx > 0:
-            print("Approx theta:\t",atheta)
-
-    if approx > 0:
-        return atheta
-    else:
-        return theta
+    if approx == 1:   atheta = round(theta,4)
+    elif approx == 2: atheta = round(theta,3)
 
 
-def MDS(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2,noise=0):
+    if approx: return atheta
+    else:      return theta
+
+
+def MDS(DM,DM_prime,DM_prime2, anchor_coord, DeltaS_prime, DeltaS_prime2, DIM=2,noise=0):
+    '''
+    MultiDimensional Scaling algorithm, according to the paper.
+    INPUT: Distance matrices and variations in anchor position (DeltaS and DeltaS_prime)
+    RETURN: Estimated coordinates of UAVs
+    '''
+    if (noise=="none"): noise=0
 
     if noise:
         DM        = expected_value(DM      , noise)
@@ -240,96 +236,51 @@ def MDS(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2,noise=0):
     # Eigenvalue decomposition for a first estimation of the coordinates: S*
     S_star = EVD(DM,DIM)
 
-    # Remove translational ambiguities
-    S_star, offset = remove_offset(S,S_star)
+    # Remove translational ambiguity
+    S_star, _ = remove_offset(anchor_coord, S_star)
 
+    
     # Estimation of the rotation angle: theta_r
-    if not noise:
-        theta_r = get_theta(DM,DM_prime,S_star,S_prime-S)
-    else:
-        theta_r = LSE(DM,DM_prime,S_star,S_prime-S)
+    if noise: theta_r = LSE(DM,DM_prime,S_star,DeltaS_prime)
+    else:     theta_r = get_theta(DM,DM_prime,S_star, DeltaS_prime)
+
 
     # New rotated coordinates: S**
-    S_star2 = rotateMatrix(theta_r)@S_star
+    S_star2 = rotation_matrix(theta_r)@S_star
 
     # Estimation of the new rotation angle after another displacement
-    if not noise:
-        theta_r2 = get_theta(DM,DM_prime2,S_star2,S_prime2-S,approx=2)
-    else:
-        theta_r2 = LSE(DM,DM_prime2,S_star2,S_prime2-S)
+    if noise: theta_r2 = LSE(DM,DM_prime2,S_star2,DeltaS_prime2)
+    else:     theta_r2 = get_theta(DM,DM_prime2,S_star2,DeltaS_prime2,approx=2)
 
-    # Find if there is any flip ambiguities
-    if (not noise) and (theta_r2 != 0):
-        F = np.array([[-1,0],[0,1]])
-        theta_r = get_theta(DM,DM_prime,F@S_star,S_prime-S)
-        S_star2 = rotateMatrix(theta_r)@F@S_star
 
-    S_s = np.copy(S_star2)
+    # Detection of flip ambiguity
     if noise:
-        # Let's find the optimal threshold
+        l = 1/2*g(-2*np.arctan2(DeltaS_prime[0,0],DeltaS_prime[1,0]) + 2*np.arctan2(DeltaS_prime2[0,0],DeltaS_prime2[1,0]))
+        if np.abs(theta_r2) > np.abs(l):
+            F = np.array([[-1,0,0],[0,1,0],[0,0,0]])
+            theta_r3 = LSE(DM,DM_prime,F@S_star,DeltaS_prime)
+            S_star2 = rotation_matrix(theta_r3)@F@S_star
+        else:    print("Ritocco")
 
-        l = 1/2*g(-2*np.arctan2((S_prime-S)[0,0],(S_prime-S)[1,0]) + 2*np.arctan2((S_prime2-S)[0,0],(S_prime2-S)[1,0]))
-        l = 1/2*g(-2*np.arctan2((S_prime-S)[1,0],(S_prime-S)[0,0]) + 2*np.arctan2((S_prime2-S)[1,0],(S_prime2-S)[0,0]))
-        print(l)
-        if np.abs(theta_r2) < np.abs(l):
-            F = np.array([[-1,0],[0,1]])
-            theta_r = LSE(DM,DM_prime,F@S_star,S_prime-S)
-            S_star2 = rotateMatrix(theta_r)@F@S_star
-    return S_star,S_s,S_star2
-
-
-def MDS_test(S,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIM=2, noise='Gaussian'):
-
-
-    DM        = expected_value(DM,'Gaussian')
-    # Eigenvalue decomposition for a first estimation of the coordinates: S*
-    S_star = EVD(DM,DIM)
-    # Remove translational ambiguities
-    S_star, offset = remove_offset(S,S_star)
-
-
-    DM_prime  = expected_value(DM_prime,'Gaussian')
-    # Estimation of the rotation angle: theta_r
-    theta_r = LSE(DM,DM_prime,S_star,S_prime-S)
-    print(theta_r>=-np.pi and theta_r < np.pi)
-    print(theta_r)
-    exit(1)
-    # New rotated coordinates: S**
-    S_star2 = rotateMatrix(theta_r)@S_star
-
-    DM_prime2 = expected_value(DM_prime2,'Gaussian')
-    # Estimation of the rotation angle: theta_r
-    theta_r2 = LSE(DM,DM_prime2,S_star2,S_prime2-S)
-
-    l = 1/2*g(-2*np.arctan2((S_prime-S)[0,0],(S_prime-S)[1,0]) + 2*np.arctan2((S_prime2-S)[0,0],(S_prime2-S)[1,0]))
-    #l = 1/2*g(-2*np.arctan2((S_prime-S)[1,0],(S_prime-S)[0,0]) + 2*np.arctan2((S_prime2-S)[1,0],(S_prime2-S)[0,0]))
-
-    if np.abs(theta_r2) > np.abs(l):
-        F = np.array([[-1,0],[0,1]])
-        theta_r3 = LSE(DM,DM_prime,F@S_star,S_prime-S)
-        S_star2 = rotateMatrix(theta_r3)@F@S_star
-
-    if np.abs(theta_r2) < np.abs(l):
-        #theta_r3 = get_theta(DM,DM_prime,S_star2,S_star-S)
-        #S_star3 = rotateMatrix(theta_r3)@S_star2
-        pass
     else:
-        print("no")
-        S_star2 = rotateMatrix(theta_r)@S_star2
+        if (theta_r2 != 0): 
+            F = np.array([[-1,0,0],[0,1,0],[0,0,1]])
+            theta_r3 = get_theta(DM,DM_prime,F@S_star,DeltaS_prime)
+            S_star2 = rotation_matrix(theta_r3)@F@S_star       
 
-
-    return S_star, 0, S_star2
+    return S_star2
 
 
 def objective_function(theta,DM,DM_prime,S_star,displ):
+    '''
+    Objective function for the LSE minimization
+    INPUT: distance matrices, S* and displcement
+    RETURN: function to be minimized
+    '''
     deltaX = displ[0,0]
     deltaY = displ[1,0]
 
     obj = 0
-    alpha_n = 0
-    gamma_n = 0
-    beta_n  = 0
-    delta_n = 0
     
     for index in range(len(DM)):
         a = DM[0,index] - DM_prime[0,index] + deltaX**2 + deltaY**2
@@ -376,14 +327,7 @@ def analytical_sol(DM,DM_prime, S_star, displ):
     sol = sol[sol>=-1]
     sol = sol[sol<=1]
 
-    return sol
 
-def LSE(DM,DM_prime,S_star,displ):
-
-    r = minimize_scalar(objective_function,args=(DM,DM_prime,S_star,displ))
-
-    sol = analytical_sol(DM,DM_prime,S_star,displ)
-    
     candidates = []
     
     for can in sol:
@@ -391,22 +335,33 @@ def LSE(DM,DM_prime,S_star,displ):
         candidates.append(g(np.pi - np.arcsin(can)))
     
     candidates = np.array(candidates)
-
+    
     candidates = candidates[candidates >= -np.pi]
     candidates = candidates[candidates <   np.pi]
-    print(candidates)
+    
+    obj = [objective_function(can2,DM,DM_prime,S_star,displ) for can2 in candidates]
+    return np.real(candidates[np.argmin(obj)])
 
-    print("Check", np.min(np.abs(candidates - r.x)))
+def LSE(DM,DM_prime,S_star,displ):
+    '''
+    Least-square-error functon
+    INPUT: distance matrices, S* corrdinated and displacement
+    RETURN: angle that minimizes the objective function
+    '''
+    r = minimize_scalar(objective_function,args=(DM,DM_prime,S_star,displ))
+
     
     return r.x
-
+    
 
 def g(t):
-    if (t >= -np.pi and t < np.pi):
-        return t - 2*np.pi*np.floor(t/(2*np.pi)+1/2)
-    else:
-        print('Exception: angle out of range [-Pi,Pi]')
-        return t
+    '''
+    g-function as defined in the paper, to wrap any arbitrary angle into the [-pi, pi) range
+    INPUT: angle in radians
+    RETURN: wrapped angle
+    '''
+    t = np.real(t)
+    return t - 2*np.pi*np.floor(t/(2*np.pi)+1/2)
 
 
 
@@ -427,55 +382,3 @@ def g(t):
 
 
 
-
-
-
-
-
-
-
-
-
-def theta_i1(S_star,S,index):
-    print(index)
-    if index > 0:
-        return g(np.arctan2(S_star[1,index],S_star[0,index])-np.arctan2(S[1,index],S[0,index]))
-    else:
-        print("OK")
-        return None
-
-def THETA_i(S,displ,index):
-    deltaX = displ[0]
-    deltaY = displ[1]
-    return np.arctan2(S[1,index],S[0,index]) + np.arctan2(deltaY,deltaX) - np.pi/2
-
-def theta_i2(theta1, THETA):
-    return g(theta1 + 2*THETA) 
-
-def estimate_theta2(DM2,DM_prime,S_star,displ,index=1,verbose=0):
-    
-    deltaX = displ[0]
-    deltaY = displ[1]
-
-    a = DM2[0,index] - DM_prime[0,index] + deltaX**2 + deltaY**2
-    b = -2*(S_star[0,index]*deltaX + S_star[1,index]*deltaY)    
-    c =  2*(S_star[0,index]*deltaY - S_star[1,index]*deltaX)    
-
-    theta1 = np.arctan((-a*c**2-np.sqrt(-c**2*(a**2-b**2-c**2))*b)/(b**2+c**2)/c,(-a*b+np.sqrt(-c**2*(a**2-b**2-c**2)))/(b**2+c**2))
-    theta2 = np.arctan((-a*c**2+np.sqrt(-c**2*(a**2-b**2-c**2))*b)/(b**2+c**2)/c,(-a*b-np.sqrt(-c**2*(a**2-b**2-c**2)))/(b**2+c**2))
-
-    return theta1,theta2
-
-def estimate_theta3(DM2,DM_prime,S_star,displ,index=1,verbose=0):
-    
-    deltaX = displ[0]
-    deltaY = displ[1]
-
-    a = DM2[0,index] - DM_prime[0,index] + deltaX**2 + deltaY**2
-    b = -2*(S_star[0,index]*deltaX + S_star[1,index]*deltaY)    
-    c =  2*(S_star[0,index]*deltaY - S_star[1,index]*deltaX)    
-
-    theta1 = np.arctan2(a*b + np.abs(c)*np.sqrt(b**2+c**2-a**2),a*c - b/c*np.abs(c)*np.sqrt(b**2+c**2-a**2))
-    theta2 = np.arctan2(a*b - np.abs(c)*np.sqrt(b**2+c**2-a**2),a*c + b/c*np.abs(c)*np.sqrt(b**2+c**2-a**2))
-
-    return theta1,theta2

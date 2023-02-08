@@ -1,6 +1,6 @@
 import sys
 sys.path.append('')
-
+import time
 import numpy as np
 from UAV import *
 import matplotlib.pyplot as plt
@@ -31,33 +31,36 @@ for drone in platoon:
 # TO DEMONSTRATE IT
 
 S = coordinates[0:2,:]
-S_anc = np.copy(S)
-S_anc[:,1:] = np.zeros((2,len(S[0,:])-1))
 
 plt.ion()
 ii = 1
 while True:
 
-    # Simulate the communication among UAVs and get distances
-    #DM = DM_from_platoon2(platoon)
-    DM = DM_from_S2(S)
-    
-
     # Simulate the movement of the anchor/leader drone
-    S_prime = S + move(DIMENSION,N_ROBOTS)
-    # Simulate a NEW communication among UAVs and get distances
-    DM_prime = DM_from_S2(S_prime)
+    S += move(DIMENSION,N_ROBOTS, movement='all')
+    S_anc = np.copy(S)
+    S_anc = S_anc[:,0]
 
-
-    # Simulate a NEW movement of the anchor/leader drone to detect flip ambiguities
-    S_prime2 = S_prime + move(DIMENSION,N_ROBOTS)
-    # Simulate a NEW communication among UAVs and get distances
-    DM_prime2 = DM_from_S2(S_prime2)
-
-    SS, _, S_estim = MDS(S_anc,DM,S_prime,DM_prime,S_prime2,DM_prime2,DIMENSION)
+    # Add Gaussian noise: mean: 0 | variance: 0.01
+    DM = square(DM_from_S(S) + noise_matrix('gaussian',N_ROBOTS, [0,0.01]))
     
-    plot_points(ii,plt,S=S, SS= SS,S_estim = S_estim)
+    # Simulate the movement of the anchor/leader drone
+    DeltaS_prime = move(DIMENSION,N_ROBOTS, movement='anchor')
+    S_prime = S + DeltaS_prime
 
-    S += move(DIMENSION,N_ROBOTS,all=1)
+    # Simulate a NEW communication among UAVs and get distances
+    DM_prime = square(DM_from_S(S_prime) + noise_matrix('gaussian',N_ROBOTS, [0,0.01]))
+    
+    # Simulate a NEW movement of the anchor/leader drone to detect flip ambiguities
+    DeltaS_prime2 = move(DIMENSION,N_ROBOTS, movement='anchor')
+    S_prime2 = S_prime + DeltaS_prime2
+
+    # Simulate a NEW communication among UAVs and get distances
+    DM_prime2 = square(DM_from_S(S_prime2) + noise_matrix('gaussian',N_ROBOTS, [0,0.01]))
+    
+    S_estim = MDS(DM,DM_prime,DM_prime2, S_anc, DeltaS_prime, DeltaS_prime2,DIMENSION, noise='gaussian')
+    
+    plot_points(ii,plt,S=S, S_estim = S_estim)
+    time.sleep(3)
     ii += 1
 
