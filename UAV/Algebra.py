@@ -291,6 +291,7 @@ def objective_function(theta,DM,DM_prime,S_star,displ):
 
     return obj
 
+
 def analytical_sol(DM,DM_prime, S_star, displ):
     deltaX = displ[0,0]
     deltaY = displ[1,0]
@@ -341,6 +342,7 @@ def analytical_sol(DM,DM_prime, S_star, displ):
     
     obj = [objective_function(can2,DM,DM_prime,S_star,displ) for can2 in candidates]
     return np.real(candidates[np.argmin(obj)])
+
 
 def LSE(DM,DM_prime,S_star,displ):
     '''

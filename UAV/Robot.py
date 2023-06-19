@@ -12,7 +12,7 @@ class Robot:
     def id(self):
         return self.__id
     @id.setter
-    def x(self,value):
+    def id(self,value):
         if value != "" and type(value) == str:
             self.__id = value
         else:
