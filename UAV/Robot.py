@@ -3,9 +3,9 @@ import numpy as np
 class Robot:
     def __init__(self,id,r_x,r_y,r_z):
         self.__id = id
-        self.__x = r_x
-        self.__y = r_y
-        self.__z = r_z
+        self.__x  = r_x
+        self.__y  = r_y
+        self.__z  = r_z
 
 
     @property
@@ -13,7 +13,7 @@ class Robot:
         return self.__id
     @id.setter
     def id(self,value):
-        if value != "" and type(value) == str:
+        if (value != "" and type(value) == str):
             self.__id = value
         else:
             raise Exception("ID: bad input provided")
@@ -23,9 +23,9 @@ class Robot:
         return self.__x
     @x.setter
     def x(self,value):
-        if type(value) == float:
+        if (type(value) == float):
             self.__x = value
-        elif type(value) == int:
+        elif (type(value) == int):
             self.__x = float(value)
         else:
             raise Exception("X: bad input provided")
@@ -35,9 +35,9 @@ class Robot:
         return self.__y
     @y.setter
     def y(self,value):
-        if type(value) == float:
+        if (type(value) == float):
             self.__y = value
-        elif type(value) == int:
+        elif (type(value) == int):
             self.__y = float(value)
         else:
             raise Exception("Y: bad input provided")
@@ -47,9 +47,9 @@ class Robot:
         return self.__z
     @z.setter
     def z(self,value):
-        if type(value) == float:
+        if (type(value) == float):
             self.__z = value
-        elif type(value) == int:
+        elif (type(value) == int):
             self.__z = float(value)
         else:
             raise Exception("Z: bad input provided")
