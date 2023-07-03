@@ -156,7 +156,6 @@ def MDS(distance_matrix, anchor_pos, true_pos = None):
 
     # 3. Compute the 3 × 3 covariance matrix
     H = P_bar @ P_prime_bar.T
-    # H = P_prime1 @ P1.T
 
     # 4a. Compute the singular value decomposition
     UU, SS, VV = np.linalg.svd(H)
@@ -189,13 +188,7 @@ def MDS(distance_matrix, anchor_pos, true_pos = None):
         print("----Final choice----")
         print(true_pos - X_hat[:,:-3])
     
-    print()
-    print("Difference between the anchors")
-    print(anchor_pos - np.hstack([X_hat[:,0].reshape(-1,1), X_hat[:,-3:]]))
-
-    #return np.hstack([X_hat[:,0].reshape(-1,1), X_hat[:,-3:]])
-
-    return X_hat[:,:-3]
+    return X_hat # X_hat[:,:-3]
 
 
 # if __name__ == "__main__":
