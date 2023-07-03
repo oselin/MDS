@@ -145,8 +145,7 @@ def MDS(distance_matrix, anchor_pos, true_pos = None):
     # P = anchors from the relative map
     # Q = true position of the anchors
     P = anchor_pos
-    P_prime = S[:,-4:]
-
+    P_prime = np.hstack([S[:,0].reshape(-1,1), S[:,-3:]])
 
     ## Steps for turning relative map into absolute map
     # 1. Compute the weighted centroids of both point sets
@@ -189,8 +188,14 @@ def MDS(distance_matrix, anchor_pos, true_pos = None):
         print()
         print("----Final choice----")
         print(true_pos - X_hat[:,:-3])
+    
+    print()
+    print("Difference between the anchors")
+    print(anchor_pos - np.hstack([X_hat[:,0].reshape(-1,1), X_hat[:,-3:]]))
 
-    return X_hat
+    #return np.hstack([X_hat[:,0].reshape(-1,1), X_hat[:,-3:]])
+
+    return X_hat[:,:-3]
 
 
 # if __name__ == "__main__":

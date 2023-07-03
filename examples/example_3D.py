@@ -44,7 +44,9 @@ def simulation(parameters):
         X_hat = MDS(DM, anchor_pos, X)
 
         for i in range(X.shape[1]):
-            print(np.sqrt(np.sum(X[:,i] - X_hat[:,i])**2))
+            print(X[:,i] - X_hat[:,i])
+            print(np.sqrt(np.sum( (X[:,i] - X_hat[:,i]))**2 ))
+
         exit(0)
 
 
@@ -52,7 +54,7 @@ def simulation(parameters):
 if __name__ == '__main__':
 
     # Default simulation parameters
-    params = {'number_uavs' : 20, 'noise' : 'gaussian'}
+    params = {'number_uavs' : 5, 'noise' : 'gaussian'}
 
     # Load parameter from terminal, if provided
     for arg in sys.argv[1:]:
