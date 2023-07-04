@@ -1,6 +1,6 @@
 #!/usr/bin/env
 import numpy as np
-from scipy.optimize import minimize
+# from scipy.optimize import minimize
 
 def get_distance(d1:np.array, d2:np.array = None):
     """
@@ -152,27 +152,49 @@ def MDS(distance_matrix, anchor_pos, true_pos = None):
     # Define P and Q, two sets of corresponding nodes
     # P = anchors from the relative map
     # Q = true position of the anchors
-    P = anchor_pos
-    P_prime = np.hstack([S[:,0].reshape(-1,1), S[:,-3:]])
+   
 
-    def f(x):
-        R, t = to_R_t(x)
+    p = np.hstack([S[:,0].reshape(-1,1), S[:,-3:]])
+    q = anchor_pos
 
-        out = 0
-        for i in range(P.shape[1]):
-            out += np.sum( ( R @ P_prime[:,i] + t - P[:,i])**2 )
+    p_bar, q_bar = 1/4*np.sum(p, axis=1).reshape(-1,1), 1/4*np.sum(q, axis=1).reshape(-1,1)
+    P_prime = p - p_bar
+    Q_prime = q - q_bar
+
+    H = P_prime @ Q_prime.T
+
+    # UU is returned correctly but has to be used transposed
+    # VV is returned transposed but has to be used normally
+    UU, SS, VV = np.linalg.svd(H)
+
+    R = VV.T @ UU.T
+
+    t = q_bar -  R @ p_bar
+
+    X_hat = R @ S + t
+
+
+    return X_hat
+    # # # P = anchor_pos
+    # # # P_prime = np.hstack([S[:,0].reshape(-1,1), S[:,-3:]])
+    # # # def f(x):
+    # # #     R, t = to_R_t(x)
+
+    # # #     out = 0
+    # # #     for i in range(P.shape[1]):
+    # # #         out += np.sum( ( R @ P_prime[:,i] + t - P[:,i])**2 )
         
-        return out
+    # # #     return out
 
-    x0 = np.hstack([np.ones([1,9]), np.ones([1,3])])
+    # # # x0 = np.hstack([np.ones([1,9]), np.ones([1,3])])
 
-    v = minimize(f, x0, method='L-BFGS-B' )
+    # # # v = minimize(f, x0, method='L-BFGS-B' )
 
-    Rp, tp = to_R_t(v.x)
+    # # # Rp, tp = to_R_t(v.x)
 
-    X_hat = Rp @ S + tp
+    # # # X_hat = Rp @ S + tp
 
-    return X_hat # X_hat[:,:-3]
+    # # # return X_hat # X_hat[:,:-3]
     
 
 

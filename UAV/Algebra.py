@@ -1,6 +1,6 @@
 #!/usr/bin/env
 import numpy as np
-from  scipy.optimize import minimize_scalar
+# from  scipy.optimize import minimize_scalar
 
 
 
