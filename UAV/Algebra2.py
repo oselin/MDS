@@ -1,5 +1,6 @@
 #!/usr/bin/env
 import numpy as np
+from scipy.optimize import minimize
 
 def get_distance(d1:np.array, d2:np.array = None):
     """
@@ -64,7 +65,7 @@ def combine_matrices(D1, D2, DELTA2, D3, DELTA3, D4, DELTA4):
 
     ## 2 - Add the second distance matrix information
     # Create the new column vector to add to the matrix
-    col = np.hstack([get_distance(DELTA2), D2[:,-1]]).reshape(-1,1)
+    col = np.hstack([get_distance(DELTA2), D2[0,1:], [0]]).reshape(-1,1)
 
     # Add the vector to the symmetric matrix
     DM = np.hstack([DM, col[:-1]])
@@ -72,7 +73,7 @@ def combine_matrices(D1, D2, DELTA2, D3, DELTA3, D4, DELTA4):
 
     ## 3 - Add the second distance matrix information
     # Create the new column vector to add to the matrix
-    col = np.hstack([get_distance(DELTA3), D3[:-1,-1], get_distance(DELTA2, DELTA3), D3[-1,-1]]).reshape(-1,1)
+    col = np.hstack([get_distance(DELTA3), D3[0,1:], get_distance(DELTA2, DELTA3), [0]]).reshape(-1,1)
     
     # Add the vector to the symmetric matrix
     DM = np.hstack([DM, col[:-1]])
@@ -80,7 +81,7 @@ def combine_matrices(D1, D2, DELTA2, D3, DELTA3, D4, DELTA4):
 
     ## 4 - Add the second distance matrix information
     # Create the new column vector to add to the matrix
-    col = np.hstack([get_distance(DELTA4), D4[:-1,-1], get_distance(DELTA2, DELTA4), get_distance(DELTA3, DELTA4), D4[-1,-1]]).reshape(-1,1)
+    col = np.hstack([get_distance(DELTA4), D4[0,1:], get_distance(DELTA2, DELTA4), get_distance(DELTA3, DELTA4), [0]]).reshape(-1,1)
 
     # Add the vector to the symmetric matrix
     DM = np.hstack([DM, col[:-1]])
@@ -129,7 +130,14 @@ def solve_ambiguity(Sp, Sm, centroid):
             out[:,i] = Sm[:,i]
 
     return out
+    
 
+def to_vector(R, t):
+    return np.hstack([R.flatten(), t.flatten()])
+
+def to_R_t(vec):
+    vec = vec.reshape(12,)
+    return vec[:3*3].reshape(3,3), vec[3*3:].reshape(3,-1)
 
 
 def MDS(distance_matrix, anchor_pos, true_pos = None):
@@ -147,6 +155,27 @@ def MDS(distance_matrix, anchor_pos, true_pos = None):
     P = anchor_pos
     P_prime = np.hstack([S[:,0].reshape(-1,1), S[:,-3:]])
 
+    def f(x):
+        R, t = to_R_t(x)
+
+        out = 0
+        for i in range(P.shape[1]):
+            out += np.sum( ( R @ P_prime[:,i] + t - P[:,i])**2 )
+        
+        return out
+
+    x0 = np.hstack([np.ones([1,9]), np.ones([1,3])])
+
+    v = minimize(f, x0, method='L-BFGS-B' )
+
+    Rp, tp = to_R_t(v.x)
+
+    X_hat = Rp @ S + tp
+
+    return X_hat # X_hat[:,:-3]
+    
+
+
     ## Steps for turning relative map into absolute map
     # 1. Compute the weighted centroids of both point sets
     mu, mu_prime = 1/4*np.sum(P, axis=1).reshape(-1,1), 1/4*np.sum(P_prime, axis=1).reshape(-1,1)
@@ -159,8 +188,8 @@ def MDS(distance_matrix, anchor_pos, true_pos = None):
 
     # 4a. Compute the singular value decomposition
     UU, SS, VV = np.linalg.svd(H)
-    Rp = UU @ VV.T
-
+    Rp = UU @ VV.T 
+    
     # 4b. Compute the singular value decomposition
     SIGMA = np.diag([1,1,-1])
     Rm = UU @ SIGMA @ VV.T
@@ -175,6 +204,10 @@ def MDS(distance_matrix, anchor_pos, true_pos = None):
     Sp = Rp @ S + tp
     Sm = Rm @ S + tm
 
+    # S - relative map
+    # X_hat = R@S + t
+
+    return Sm
     # 7. Solve the ambiguity
     X_hat = solve_ambiguity(Sp, Sm, mu)
 
