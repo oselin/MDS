@@ -1,4 +1,4 @@
-import sys, time, ast
+import sys, ast
 sys.path.append('')
 
 import numpy as np
@@ -25,19 +25,19 @@ def simulation(parameters):
 
         # Retrieve the distances and build the distance matrix DM. In reality it comes from UWB sensors
         ANCHOR1, X = move_anchor(points = X, step = 0)
-        DM1  = distance_matrix(X)     
+        DM1  = distance_matrix(X) + noise(mean=mean, std=sigma, shape=parameters['number_uavs'])       
 
         # Simulate a second virtual anchor, by moving the real one and retrieving distances
         ANCHOR2, X  = move_anchor(points = X, step = 1, displacement=alpha)
-        DM2 = distance_matrix(X)      
+        DM2 = distance_matrix(X) + noise(mean=mean, std=sigma, shape=parameters['number_uavs'])       
         
         # Simulate a third virtual anchor, by moving the real one and retrieving distances
         ANCHOR3, X  = move_anchor(points = X, step = 2, displacement=alpha)
-        DM3 = distance_matrix(X)    
+        DM3 = distance_matrix(X) + noise(mean=mean, std=sigma, shape=parameters['number_uavs'])       
         
         # Simulate a fourth virtual anchor, by moving the real one and retrieving distances
         ANCHOR4, X  = move_anchor(points = X, step = 3, displacement=alpha)
-        DM4 = distance_matrix(X)
+        DM4 = distance_matrix(X) + noise(mean=mean, std=sigma, shape=parameters['number_uavs'])       
         
         # Assemble the distance information in one unique matrix
         DM = combine_matrices(DM1, DM2, DM3, DM4, ANCHOR1, ANCHOR2, ANCHOR3, ANCHOR4)
