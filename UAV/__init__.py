@@ -18,3 +18,4 @@ from UAV.Algebra import expected_value
 from UAV.Plots   import plot_points
 
 from UAV.Algebra2 import *
+from UAV.Plots2 import *
