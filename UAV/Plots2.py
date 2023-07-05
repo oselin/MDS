@@ -2,20 +2,20 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 
-
-
 def initialize_plot():
-    global fig
+    global fig, plt
 
     fig = plt.figure(figsize=(5*3, 5*1))
     fig.suptitle("MDS algorithm")
+    plt.ion()
 
 
 
-def plot_uavs(true_coords, estimated_coords):
+def plot_uavs(true_coords, estimated_coords, waiting_time=2):
 
     titles = ["True position", "Estimated position", "Comparison"]
 
+    plt.draw()
     for i in range(3):
 
         ax = fig.add_subplot(1,3,i+1, projection='3d')
@@ -30,17 +30,20 @@ def plot_uavs(true_coords, estimated_coords):
             ax.scatter(true_coords[0, 0],  true_coords[1, 0],  true_coords[2, 0],  c="red"  )
             
         elif (i == 1): # Estimated coordinates
-            ax.scatter(estimated_coords[0, 1:], estimated_coords[1, 1:], estimated_coords[2, 1:], c="blue")
-            ax.scatter(estimated_coords[0, 0],  estimated_coords[1, 0],  estimated_coords[2, 0],  c="orange"  )
+            ax.scatter(estimated_coords[0, 1:], estimated_coords[1, 1:], estimated_coords[2, 1:], c="blue"  )
+            ax.scatter(estimated_coords[0, 0],  estimated_coords[1, 0],  estimated_coords[2, 0],  c="orange")
         else:
             # true coordinates
-            ax.scatter(true_coords[0, 1:], true_coords[1, 1:], true_coords[2, 1:], c="black")
-            ax.scatter(true_coords[0, 0],  true_coords[1, 0],  true_coords[2, 0],  c="red"  )
+            ax.scatter(true_coords[0, 1:], true_coords[1, 1:], true_coords[2, 1:], c="red")
+            ax.scatter(true_coords[0, 0],  true_coords[1, 0],  true_coords[2, 0],  c="black"  )
             
             # estimated coordinates
-            ax.scatter(estimated_coords[0, 1:], estimated_coords[1, 1:], estimated_coords[2, 1:], c="blue")
-            ax.scatter(estimated_coords[0, 0],  estimated_coords[1, 0],  estimated_coords[2, 0],  c="orange"  )
-    plt.show()
+            ax.scatter(estimated_coords[0, 1:], estimated_coords[1, 1:], estimated_coords[2, 1:], c="green" )
+            ax.scatter(estimated_coords[0, 0],  estimated_coords[1, 0],  estimated_coords[2, 0],  c="orange")
+    
+    fig.canvas.draw_idle()
+    plt.pause(waiting_time)
+
 
 
 

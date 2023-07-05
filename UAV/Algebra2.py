@@ -2,6 +2,10 @@
 import numpy as np
 # from scipy.optimize import minimize
 
+def noise(mean = 0, std = 0.01, shape=[3,1]):
+    return np.random.normal(mean, std, size=[shape, shape])
+
+
 def get_distance(point1:np.array, point2:np.array):
     """
     Compute the distance between two points, i.e. compute vectorial difference.
@@ -29,25 +33,52 @@ def distance_matrix(X):
     return D
 
 
-def move_anchor(points, axis = None, displacement = 1):
-
+def move_anchor(points, step = 0, displacement = 1):
+    """
+    Given the set of points, make the anchor move for a given displacement.
+    The step value indicates the phase/update of the anchor
+    """
     motion = np.zeros(points.shape)
+
+    if (step):
+        if   (step == 1):
+            motion[0,0] += displacement
+        elif (step == 2):
+            motion[0,0] -= displacement
+            motion[1,0] += displacement
+        elif (step == 3):
+            motion[1,0] -= displacement
+            motion[2,0] += displacement
+        elif (step == 4):
+            motion[2,0] -= displacement
     
-    if (axis is not None):
-        if   (axis == 0 or axis == "x"):
-            motion[0,0] = displacement
-        elif (axis == 1 or axis == "y"):
-            motion[1,0] = displacement
-        elif (axis == 2 or axis == "z"):
-            motion[2,0] = displacement
+    # Apply the displacement
+    points = points + motion
+    
+    return points[:,0].reshape(3,-1), points
+
+def move_fleet(points, low = 0, high = 0):
+    """
+    Given the set of points, make the anchor move for a given displacement.
+    The step value indicates the phase/update of the anchor
+    """
+    motion = np.zeros(points.shape)
+
+    motion[:,1:] += np.random.uniform(low=low, high=high, size=[points.shape[0], points.shape[1] - 1])
     
     # Apply the displacement
     points = points + motion
 
-    return points[:,0].reshape(3,-1), points
+    return points
 
 
 def combine_matrices(D1, D2, D3, D4, P1, P2, P3, P4):
+
+    # The matrices might be asymmetric due to noise. Use instead the expected values to overcome this
+    D1 = 1/2*(D1 + D1.T)
+    D2 = 1/2*(D2 + D2.T)
+    D3 = 1/2*(D3 + D3.T)
+    D4 = 1/2*(D4 + D4.T)
 
     ## 1 - Start from the initial distance matrix D1
     DM = D1.copy()
