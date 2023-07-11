@@ -52,7 +52,7 @@ def simulation(parameters):
         # X_hat = MDS(DM, anchor_pos)
         X_hat = WLP(DM, anchor_pos)
         print("X-X_hat")
-        print(X-X_hat)
+        print(np.sum(X-X_hat, axis=1))
         exit(0)
         # Plot the scenario
         # plot_uavs(true_coords=X, estimated_coords=X_hat)

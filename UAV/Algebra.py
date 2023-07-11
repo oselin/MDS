@@ -120,7 +120,7 @@ def WLP(distance_matrix, anchor_pos):
     distance_matrix:
     X : anchor coords that are known
 
-    Function computing the positions thanks to trilateration
+    Function implementing trilateration.
     distances: matrix of distances measured between the i-th anchor and the n node
             It is structured as following:
             matrix 4xN, of which each column contains the distance from the i-th anchor

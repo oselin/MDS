@@ -12,3 +12,6 @@ from UAV.Algebra import WLP
 
 from UAV.Plots import initialize_plot
 from UAV.Plots import plot_uavs
+
+from UAV.Simulation import simulate
+from UAV.Simulation import simulate_noise
