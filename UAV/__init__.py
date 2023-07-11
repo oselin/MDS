@@ -1,21 +1,14 @@
 from UAV.Robot   import Robot
-from UAV.Algebra import remove_offset
-from UAV.Algebra import move
-from UAV.Algebra import DM_from_platoon
-from UAV.Algebra import DM_from_platoon2
-from UAV.Algebra import DM_from_S
-from UAV.Algebra import DM_from_S2
-from UAV.Algebra import rotation_matrix
-from UAV.Algebra import get_theta
+
+from UAV.Algebra import noise
+from UAV.Algebra import get_distance
+from UAV.Algebra import distance_matrix
+from UAV.Algebra import move_anchor
+from UAV.Algebra import move_fleet
+from UAV.Algebra import combine_matrices
 from UAV.Algebra import EVD
 from UAV.Algebra import MDS
-from UAV.Algebra import LSE
-from UAV.Algebra import objective_function
-from UAV.Algebra import noise_matrix
-from UAV.Algebra import square
-from UAV.Algebra import expected_value
+from UAV.Algebra import WLP
 
-from UAV.Plots   import plot_points
-
-from UAV.Algebra2 import *
-from UAV.Plots2 import *
+from UAV.Plots import initialize_plot
+from UAV.Plots import plot_uavs

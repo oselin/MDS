@@ -1,60 +1,69 @@
-#!/usr/bin/env
-import random
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
 
-def plot_points(ii,plt,**kwargs):
-    
-    if len(kwargs.items()) == 0:
-         raise Exception("No data provided")
-    else:
-        dim = len(list(kwargs.items())[0][1][:,0]) 
-        if dim == 2:
-            generate_plot_2D(ii,plt,list(kwargs.items()))
-        elif dim == 3:
-            generate_plot_3D(ii,plt,list(kwargs.items()))
+def initialize_plot():
+    global fig, plt
+
+    fig = plt.figure(figsize=(5*3, 5*1))
+    fig.suptitle("MDS algorithm")
+    plt.ion()
+
+
+def plot_uavs(true_coords, estimated_coords, waiting_time=2):
+
+    titles = ["True position", "Estimated position", "Comparison"]
+
+    plt.draw()
+    for i in range(3):
+
+        ax = fig.add_subplot(1,3,i+1, projection='3d')
+        ax.view_init(50, -50)
+        ax.set(xlabel="X", ylabel="Y", zlabel="Z", facecolor="white", title=titles[i], xlim=[-5,5], ylim=[-5,5], zlim=[-5,5])
+        ax.xaxis.set_pane_color("white", alpha=None)
+        ax.yaxis.set_pane_color("white", alpha=None)
+        ax.zaxis.set_pane_color("white", alpha=None)
+
+        if (i == 0): # True coordinates
+            ax.scatter(true_coords[0, 1:], true_coords[1, 1:], true_coords[2, 1:], c="black")
+            ax.scatter(true_coords[0, 0],  true_coords[1, 0],  true_coords[2, 0],  c="red"  )
+            
+        elif (i == 1): # Estimated coordinates
+            ax.scatter(estimated_coords[0, 1:], estimated_coords[1, 1:], estimated_coords[2, 1:], c="blue"  )
+            ax.scatter(estimated_coords[0, 0],  estimated_coords[1, 0],  estimated_coords[2, 0],  c="orange")
         else:
-            raise Exception("Wrong data provided")
-
-
-
-def generate_plot_2D(ii,plt,data):
-
-    # Data processing
-    S = data[0][1]
-    n_elem = len(S[0,:])
-    n_plots = len(data)
-
-    col = (0,0,0)  # color for the anchor: BLACK
-    c_set = [col]
+            # true coordinates
+            ax.scatter(true_coords[0, 1:], true_coords[1, 1:], true_coords[2, 1:], c="red")
+            ax.scatter(true_coords[0, 0],  true_coords[1, 0],  true_coords[2, 0],  c="black"  )
+            
+            # estimated coordinates
+            ax.scatter(estimated_coords[0, 1:], estimated_coords[1, 1:], estimated_coords[2, 1:], c="green" )
+            ax.scatter(estimated_coords[0, 0],  estimated_coords[1, 0],  estimated_coords[2, 0],  c="orange")
     
-    # Ugly approach to always set the same colors
-    random.seed(0)
-    for _ in range(n_elem-1):
-        while col in c_set:
-            col = (random.random(),
-                   random.random(),
-                   random.random())
-        c_set.append(col)
-
-    fig, axis = plt.subplots(1,n_plots, figsize=(5*n_plots,4),num=1, clear=True)
-
-    c = 0
-    #xl = [min(S[0,:])-2,max(S[0,:])+2]
-    #yl = [min(S[1,:])-2,max(S[1,:])+2]
-    xl = [-15,15]
-    yl = [-15,15]
-    for title,value in data:
-        axis[c].scatter(value[0,:], value[1,:], color=c_set, alpha=1.0)
-        axis[c].scatter(S    [0,:], S    [1,:], color=c_set, alpha=0.2)
-        axis[c].set_title(str(ii) + ' MDS w/ ' + title)
-        axis[c].set_xlim(xl)
-        axis[c].set_ylim(yl)
-
-        c += 1
-    plt.show()
-
-    # Define and update plot
-    plt.pause(0.001)
+    fig.canvas.draw_idle()
+    plt.pause(waiting_time)
 
 
-def generate_plot_3D(ii,plt,data):
-    return
+    # scat = ax.scatter(data[0], data[1], data[2], c="b", s=5)
+
+# line2 = ax.plot(t[0], z2[0], label=f'v0 = {v02} m/s')[0]
+# ax.set(xlim=[0, 3], ylim=[-4, 10], xlabel='Time [s]', ylabel='Z [m]')
+# ax.legend()
+
+
+# def update(frame):
+#     # for each frame, update the data stored on each artist.
+#     x = data[0, :frame]
+#     y = data[1, :frame]
+#     z = data[2, :frame]
+#     # update the scatter plot:
+#     #data = np.stack([x, y]).T
+#     #scat.set_offsets(data)
+#     # update the line plot:
+#     # scat.set_xdata(x)
+#     # scat.set_ydata(y)
+#     # scat.set_zdata(z)
+#     ax.scatter(x,y,z)
+
+
+# ani = animation.FuncAnimation(fig=fig, func=update, frames=40, interval=30)
