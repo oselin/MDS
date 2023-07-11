@@ -49,13 +49,16 @@ def simulation(parameters):
         _, X = move_anchor(points = X, step = 4, displacement=alpha)
 
         # Estimate the fleet coordinates
-        X_hat = MDS(DM, anchor_pos)
-
+        # X_hat = MDS(DM, anchor_pos)
+        X_hat = WLP(DM, anchor_pos)
+        print("X-X_hat")
+        print(X-X_hat)
+        exit(0)
         # Plot the scenario
-        plot_uavs(true_coords=X, estimated_coords=X_hat)
+        # plot_uavs(true_coords=X, estimated_coords=X_hat)
         
         # Make the fleet move, except for the anchor
-        X = move_fleet(points = X, low = -2, high = 2)
+        # X = move_fleet(points = X, low = -2, high = 2)
 
 
 

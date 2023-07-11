@@ -1,6 +1,7 @@
 #!/usr/bin/env
 import numpy as np
-# from scipy.optimize import minimize
+# from scipy.optimize import least_squares
+from scipy.optimize import minimize
 
 def noise(mean = 0, std = 0.01, shape=[3,1]):
     return np.random.normal(mean, std, size=[shape, shape])
@@ -110,35 +111,46 @@ def combine_matrices(D1, D2, D3, D4, P1, P2, P3, P4):
 
     return DM
 
-def sphere(X, X0, d):
-    return (X[0] - X0[0])**2 + (X[1] - X0[1])**2 + (X[2] - X0[2])**2 - d**2
+def sphere(x, x_a, d):
+    return (x[0] - x_a[0])**2 + (x[1] - x_a[1])**2 + (x[2] - x_a[2])**2 - d
 
 
-def WLP(X1, X2, X3, X4, distances):
+def WLP(distance_matrix, anchor_pos):
     """
+    distance_matrix:
     X : anchor coords that are known
+
+    Function computing the positions thanks to trilateration
     distances: matrix of distances measured between the i-th anchor and the n node
-               It is structured as following:
-               matrix 4xN, of which each column contains the distance from the i-th anchor
+            It is structured as following:
+            matrix 4xN, of which each column contains the distance from the i-th anchor
     """
 
-    anchors = [X1, X2, X3, X4]
-
+    distances = np.vstack([distance_matrix[0,1:-3], distance_matrix[-3,1:-3],distance_matrix[-2,1:-3], distance_matrix[-1,1:-3]])
     assert len(distances) == 4
 
-    for point in distances:
+    N = distances.shape[1]
+    X_hat = np.zeros((3, 1+N))
 
-        
-        
-        def idk(X):
-            obj = 0
-            for i in range(len(anchors)):
-                obj += sphere(X, anchors[i], distances[i])
-            
-            return obj
+    def f(variables, anchor_pos, d):
+        x, y, z = variables
+        obj = 0
 
-        minimize(obj)
+        for j in range(4):
+            dx = x - anchor_pos[0, j]
+            dy = y - anchor_pos[1, j]
+            dz = z - anchor_pos[2, j]
+            obj += (dx**2 + dy**2 + dz**2 - d[j])**2
 
+        return obj
+
+    for i in range(N):
+        sol = minimize(f, np.ones((3,)), args=(anchor_pos,  distances[:,i]))
+
+        X_hat[:,1+i] = sol.x
+
+    X_hat[:, 0] = anchor_pos[:, 0]
+    return X_hat
 
 def EVD(DM, final_dimension):
     """
