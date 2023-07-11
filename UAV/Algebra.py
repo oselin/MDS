@@ -128,9 +128,17 @@ def WLP(X1, X2, X3, X4, distances):
 
     for point in distances:
 
-        obj = 0
         
-        for i
+        
+        def idk(X):
+            obj = 0
+            for i in range(len(anchors)):
+                obj += sphere(X, anchors[i], distances[i])
+            
+            return obj
+
+        minimize(obj)
+
 
 def EVD(DM, final_dimension):
     """
