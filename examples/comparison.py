@@ -35,6 +35,7 @@ def comparison(parameters):
         std_dist_WLP[:, i] = np.mean(np.abs(X-X_hat_WLP), axis=1)
 
     # verify performances
+    # TODO: better define the metrics to understand the performances, these are not the matrices the professor was talking about
     print("Bias verification")
     print("MDS: %s" % str(np.sum(mean_dist_MDS, axis=1)))
     print("WLP: %s" % str(np.sum(mean_dist_WLP, axis=1)))
